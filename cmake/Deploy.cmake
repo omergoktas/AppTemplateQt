@@ -278,6 +278,12 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}/usr/bin
         )
+        if(CMAKE_BUILD_TYPE STREQUAL Debug)
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
+            )
+        endif()
     endforeach()
 
     foreach(LIB IN LISTS LIBS)
@@ -311,6 +317,16 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/usr/plugins/${PLUGIN_TYPE}
         )
+        if(CMAKE_BUILD_TYPE STREQUAL Debug)
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+            )
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+            )
+        endif()
     endforeach()
 
     if(OPENSSL_FOUND)
@@ -401,6 +417,12 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}
         )
+        if(CMAKE_BUILD_TYPE STREQUAL Debug)
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
+            )
+        endif()
     endforeach()
 
     foreach(LIB IN LISTS LIBS)
@@ -434,6 +456,16 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/plugins/${PLUGIN_TYPE}
         )
+        if(CMAKE_BUILD_TYPE STREQUAL Debug)
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+            )
+            add_custom_command(TARGET ${TARGET} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+            )
+        endif()
     endforeach()
 
     if(OPENSSL_FOUND)
