@@ -6,9 +6,11 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QPlainTextEdit>
-#include <QJsonObject>
 #include <QPushButton>
 #include <QWindow>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags) : QMainWindow(parent, flags)
   , ui(new Ui::MainWindow(this))
@@ -47,6 +49,7 @@ void MainWindow::on_screen_changed(QScreen* screen)
         update();
     };
     disconnect(m_dprChangeConnection);
+    // Qt::QueuedConnection is needed otherwise screen->devicePixelRatio() returns the old value
     m_dprChangeConnection = connect(screen, &QScreen::physicalDotsPerInchChanged,
         this, revisualize, Qt::QueuedConnection);
     revisualize();
@@ -58,18 +61,19 @@ void MainWindow::on_submitButton_clicked()
     QNetworkRequest req;
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"_ba);
     req.setUrl(QUrl(u"https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-tr-en"_s));
-    QNetworkReply* reply = Utils::post(req, Utils::stringify({
+    thread_local QNetworkAccessManager network;
+    QNetworkReply* reply = network.post(req, QJsonDocument({
         { u"inputs"_s, ui->dreamEdit->toPlainText() },
         { u"options"_s, QJsonObject {
               { u"wait_for_model"_s, true }
           }
         }
-    }));
+    }).toJson());
 
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, this, [=] {
         ui->dreamEdit->setPlainText(ui->dreamEdit->toPlainText() + u"\n\n"_s +
-                                    Utils::translate(reply->readAll()));
+            QJsonDocument::fromJson(reply->readAll()).array().first().toObject().value("translation_text"_L1).toString());
         setEnabled(true);
     });
 }

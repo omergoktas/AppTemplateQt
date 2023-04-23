@@ -14,7 +14,7 @@ void Ui::MainWindow::setup()
 {
     auto centralWidget = new QWidget(widget);
     widget->resize(widget->sizeHint()); // Don't use adjustSize() on Windows
-    widget->move(Utils::centerPos(widget->size()));
+    widget->move(Utils::centralized(widget->size(), widget->screen()));
     widget->setCentralWidget(centralWidget);
 
     dreamEdit = new QTextEdit(centralWidget);

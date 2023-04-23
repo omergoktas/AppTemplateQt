@@ -2,36 +2,12 @@
 
 #include <QScreen>
 #include <QStyle>
-#include <QNetworkAccessManager>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <QFile>
 
-QPoint Utils::centerPos(const QSize& size, const QScreen* screen)
+QPoint Utils::centralized(const QSize& size, const QScreen* screen)
 {
     return QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size,
                                screen->availableGeometry()).topLeft();
-}
-
-QNetworkReply* Utils::post(const QNetworkRequest& request, const QByteArray& data)
-{
-    thread_local QNetworkAccessManager network;
-    return network.post(request, data);
-}
-
-QString Utils::translate(const QByteArray& data)
-{
-    return QJsonDocument::fromJson(data).array().first().toObject().value("translation_text"_L1).toString();
-}
-
-QByteArray Utils::stringify(const QJsonObject& obj)
-{
-    return QJsonDocument(obj).toJson();
-}
-
-QStringList Utils::files(const QString& dir, QDir::Filters filters, QDir::SortFlags sort)
-{
-    return QDir(dir).entryList(filters, sort);
 }
 
 QIcon Utils::si(const QString& fileName, qreal dpr)
@@ -60,7 +36,10 @@ QIcon Utils::si(const QString& fileName, qreal dpr)
     if (MOD_100 < remainder)
         suffix = SUFFIX_100;
 
-    return QIcon(fileName + suffix);
+    if (QFile::exists(fileName + suffix))
+        return QIcon(fileName + suffix);
+
+    return QIcon(fileName + u".svg"_s);
 }
 
 QPixmap Utils::sp(const QString& fileName, const QSize& size, qreal dpr)

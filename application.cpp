@@ -18,6 +18,8 @@
 #include <QStyleHints>
 #include <QStyleFactory>
 #include <QPixmapCache>
+#include <QStandardPaths>
+#include <QCoreApplication>
 
 // TODOs:
 // Settings-driven (default system dependent - as 3rd option) Dark-light mode (appearance mode) palette + Runtime change support
@@ -122,6 +124,9 @@ Application::Application(int& argc, char** argv, int) : QApplication(argc, argv)
         installTranslator(appTranslator);
     } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s, u":/translations"_s)) {
         installTranslator(appTranslator);
+    } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s,
+                                   QCoreApplication::applicationDirPath())) {
+        installTranslator(appTranslator);
     }
 
     connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
@@ -147,6 +152,15 @@ int Application::prepare()
     QApplication::setOrganizationName(APP_URL);
     QApplication::setOrganizationDomain(APP_URL);
 
+//#if defined(QT_DEBUG)
+//    const QFileInfoList& libDirs =  QDir(".").entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+//    QCoreApplication::addLibraryPath(QDir(".").absolutePath());
+//        qDebug() << QDir(".").absolutePath();
+//    for (const QFileInfo& libPath : libDirs)
+////                qDebug() << libPath.canonicalFilePath();
+//    QCoreApplication::addLibraryPath(libPath.canonicalFilePath());
+//#endif
+
     return {};
 }
 
@@ -159,7 +173,7 @@ void Application::updatePalette()
 void Application::setFont()
 {
     // Load fonts
-    const QStringList& fontFiles =  Utils::files(u":/fonts"_s);
+    const QStringList& fontFiles =  QDir(u":/fonts"_s).entryList(QDir::Files);
     for (const QString& fontName : fontFiles)
         QFontDatabase::addApplicationFont(u":/fonts/"_s + fontName);
 
@@ -202,4 +216,13 @@ void Application::setDprAdjustmentHook()
         }
     };
     QWindowSystemInterfacePrivate::installWindowSystemEventHandler(new WindowSystemEventHandler());
+}
+
+QString Application::appRootPath()
+{
+#if defined(Q_OS_MACOS)
+    return QFileInfo(QCoreApplication::applicationDirPath() + u"/../.."_s).canonicalFilePath();
+#else
+    return QCoreApplication::applicationDirPath();
+#endif
 }

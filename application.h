@@ -22,6 +22,8 @@ private:
     static void setFont();
     static void setDprAdjustmentHook();
 
+    static QString appRootPath();
+
 private:
     SignalHandler* m_signalHandler;
 };
