@@ -405,6 +405,11 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
     set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "CreateShortCut '$DESKTOP\\\\${TARGET}.lnk' '$INSTDIR\\\\${TARGET}.exe'" CACHE STRING " ")
     set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "Delete '$DESKTOP\\\\${TARGET}.lnk'" CACHE STRING " ")
 
+    if(CMAKE_BUILD_TYPE STREQUAL Debug)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/qt.conf "[Platforms]
+            WindowsArguments = fontengine=freetype")
+    endif()
+
     foreach(BIN IN LISTS BINS)
         get_target_property(QM_FILES ${BIN} QM_FILES)
         if(QM_FILES)
