@@ -198,6 +198,11 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     )
 
     add_custom_command(TARGET deploy VERBATIM
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        ${APP_DEPLOY_PREFIX}/${TARGET}.app
+    )
+
+    add_custom_command(TARGET deploy VERBATIM
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${DEPLOY_PREFIX_PATH}/${TARGET}.app ${APP_DEPLOY_PREFIX}/${TARGET}.app
     )
