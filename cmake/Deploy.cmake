@@ -130,12 +130,12 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     foreach(BIN IN LISTS BINS)
         get_target_property(QM_FILES ${BIN} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}/Contents/MacOS
         )
@@ -144,19 +144,19 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     foreach(LIB IN LISTS LIBS)
         get_target_property(QM_FILES ${LIB} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
         get_target_property(IS_FRAMEWORK ${LIB} FRAMEWORK)
         if(IS_FRAMEWORK)
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND cp -a
                 $<TARGET_BUNDLE_DIR:${LIB}> ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
         else()
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_FILE:${LIB}> ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
@@ -166,17 +166,17 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     foreach(PLUGIN IN LISTS PLUGINS)
         get_target_property(QM_FILES ${PLUGIN} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
         get_target_property(PLUGIN_TYPE ${PLUGIN} PLUGIN_TYPE)
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory
             ${DEPLOY_PREFIX_PATH}/Contents/PlugIns/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/Contents/PlugIns/${PLUGIN_TYPE}
         )
@@ -185,7 +185,7 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     if(OPENSSL_FOUND)
         foreach(LIB IN LISTS OPENSSL_SSL_LIBRARY OPENSSL_CRYPTO_LIBRARY)
             file(REAL_PATH ${LIB} LIB)
-            add_custom_command(TARGET ${TARGET} VERBATIM
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${LIB} ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
@@ -287,7 +287,7 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}/usr/bin
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
         )
@@ -324,11 +324,11 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/usr/plugins/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory
             ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
         )
@@ -425,7 +425,7 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
         )
@@ -462,11 +462,11 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/plugins/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory
             ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET ${TARGET} VERBATIM
+        add_custom_command(TARGET deploy_base VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
         )
@@ -528,12 +528,12 @@ function(deploy TARGET DEPLOY_BASE_DIR)
         set(ALL ALL)
     endif()
 
-    if(NOT TARGET deploy)
-        if(ANDROID)
-            add_custom_target(deploy ${ALL} DEPENDS apk_all)
-        else()
-            add_custom_target(deploy ${ALL} DEPENDS ${TARGET})
-        endif()
+    get_sub_targets(TARGETS ${CMAKE_CURRENT_SOURCE_DIR})
+    add_custom_target(deploy_base ALL DEPENDS ${TARGET})
+    if(ANDROID)
+        add_custom_target(deploy ${ALL} DEPENDS apk_all)
+    else()
+        add_custom_target(deploy ${ALL} DEPENDS deploy_base)
     endif()
 
     set(DEPLOY_SOURCE_DIR ${DEPLOY_BASE_DIR}/${APP_SYSTEM_NAME})

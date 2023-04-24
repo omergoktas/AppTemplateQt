@@ -173,12 +173,12 @@ const QPalette& lightPalette()
         light.setColor(QPalette::Disabled, QPalette::Highlight, 0x727272);
         light.setColor(QPalette::Base, 0xffffff);
         light.setColor(QPalette::AlternateBase, 0xf5f5f5);
-        light.setColor(QPalette::Button, 0xececec);
-        light.setColor(QPalette::Window, 0xececec);
+        light.setColor(QPalette::Button, 0xf0f0f0);
+        light.setColor(QPalette::Window, 0xf0f0f0);
         light.setColor(QPalette::BrightText, 0xffffff);
         light.setColor(QPalette::HighlightedText, 0xffffff);
         light.setColor(QPalette::ToolTipText, 0x181818);
-        light.setColor(QPalette::ToolTipBase, 0xececec);
+        light.setColor(QPalette::ToolTipBase, 0xf0f0f0);
         light.setColor(QPalette::Link, 0x025dbf);
         light.setColor(QPalette::LinkVisited, 0xb44b46);
         return light;
