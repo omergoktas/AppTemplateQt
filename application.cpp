@@ -18,8 +18,6 @@
 #include <QStyleHints>
 #include <QStyleFactory>
 #include <QPixmapCache>
-#include <QStandardPaths>
-#include <QCoreApplication>
 
 // TODOs:
 // Settings-driven (default system dependent - as 3rd option) Dark-light mode (appearance mode) palette + Runtime change support
@@ -152,15 +150,6 @@ int Application::prepare()
     QApplication::setOrganizationName(APP_URL);
     QApplication::setOrganizationDomain(APP_URL);
 
-//#if defined(QT_DEBUG)
-//    const QFileInfoList& libDirs =  QDir(".").entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-//    QCoreApplication::addLibraryPath(QDir(".").absolutePath());
-//        qDebug() << QDir(".").absolutePath();
-//    for (const QFileInfo& libPath : libDirs)
-////                qDebug() << libPath.canonicalFilePath();
-//    QCoreApplication::addLibraryPath(libPath.canonicalFilePath());
-//#endif
-
     return {};
 }
 
@@ -216,13 +205,4 @@ void Application::setDprAdjustmentHook()
         }
     };
     QWindowSystemInterfacePrivate::installWindowSystemEventHandler(new WindowSystemEventHandler());
-}
-
-QString Application::appRootPath()
-{
-#if defined(Q_OS_MACOS)
-    return QFileInfo(QCoreApplication::applicationDirPath() + u"/../.."_s).canonicalFilePath();
-#else
-    return QCoreApplication::applicationDirPath();
-#endif
 }

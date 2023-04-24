@@ -94,7 +94,7 @@ function(deploy_ios TARGET DEPLOY_SOURCE_DIR)
 endfunction()
 
 function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
-    set(DEPLOY_PREFIX_PATH ${APP_DEPLOY_PREFIX}/${TARGET}.app)
+    set(DEPLOY_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.app)
 
     find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS ${QT_BINDIR})
 
@@ -126,17 +126,16 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
 
     configure_file(${DEPLOY_SOURCE_DIR}/Info.plist
         ${DEPLOY_PREFIX_PATH}/Contents/Info.plist @ONLY)
-    file(COPY ${DEPLOY_SOURCE_DIR}/qt.conf DESTINATION ${DEPLOY_PREFIX_PATH}/Contents/Resources)
 
     foreach(BIN IN LISTS BINS)
         get_target_property(QM_FILES ${BIN} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
-        add_custom_command(TARGET deploy VERBATIM
+        add_custom_command(TARGET ${TARGET} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}/Contents/MacOS
         )
@@ -145,19 +144,19 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     foreach(LIB IN LISTS LIBS)
         get_target_property(QM_FILES ${LIB} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
         get_target_property(IS_FRAMEWORK ${LIB} FRAMEWORK)
         if(IS_FRAMEWORK)
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND cp -a
                 $<TARGET_BUNDLE_DIR:${LIB}> ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
         else()
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_FILE:${LIB}> ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
@@ -167,17 +166,17 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     foreach(PLUGIN IN LISTS PLUGINS)
         get_target_property(QM_FILES ${PLUGIN} QM_FILES)
         if(QM_FILES)
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${QM_FILES} ${DEPLOY_PREFIX_PATH}/Contents/Resources/Translations
             )
         endif()
         get_target_property(PLUGIN_TYPE ${PLUGIN} PLUGIN_TYPE)
-        add_custom_command(TARGET deploy VERBATIM
+        add_custom_command(TARGET ${TARGET} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E make_directory
             ${DEPLOY_PREFIX_PATH}/Contents/PlugIns/${PLUGIN_TYPE}
         )
-        add_custom_command(TARGET deploy VERBATIM
+        add_custom_command(TARGET ${TARGET} VERBATIM
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/Contents/PlugIns/${PLUGIN_TYPE}
         )
@@ -186,12 +185,22 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
     if(OPENSSL_FOUND)
         foreach(LIB IN LISTS OPENSSL_SSL_LIBRARY OPENSSL_CRYPTO_LIBRARY)
             file(REAL_PATH ${LIB} LIB)
-            add_custom_command(TARGET deploy VERBATIM
+            add_custom_command(TARGET ${TARGET} VERBATIM
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${LIB} ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
         endforeach()
     endif()
+
+    add_custom_command(TARGET deploy VERBATIM
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${DEPLOY_SOURCE_DIR}/qt.conf ${DEPLOY_PREFIX_PATH}/Contents/Resources
+    )
+
+    add_custom_command(TARGET deploy VERBATIM
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${DEPLOY_PREFIX_PATH}/${TARGET}.app ${APP_DEPLOY_PREFIX}/${TARGET}.app
+    )
 
     add_custom_command(TARGET deploy VERBATIM
         COMMAND ${MACDEPLOYQT_EXECUTABLE}
@@ -278,12 +287,10 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}/usr/bin
         )
-        if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
-            )
-        endif()
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
+        )
     endforeach()
 
     foreach(LIB IN LISTS LIBS)
@@ -317,16 +324,14 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/usr/plugins/${PLUGIN_TYPE}
         )
-        if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
-            )
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
-            )
-        endif()
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+            ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+        )
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+        )
     endforeach()
 
     if(OPENSSL_FOUND)
@@ -405,10 +410,8 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
     set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "CreateShortCut '$DESKTOP\\\\${TARGET}.lnk' '$INSTDIR\\\\${TARGET}.exe'" CACHE STRING " ")
     set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "Delete '$DESKTOP\\\\${TARGET}.lnk'" CACHE STRING " ")
 
-    if(CMAKE_BUILD_TYPE STREQUAL Debug)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/qt.conf "[Platforms]
-            WindowsArguments = fontengine=freetype")
-    endif()
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/qt.conf "[Platforms]
+        WindowsArguments = fontengine=freetype")
 
     foreach(BIN IN LISTS BINS)
         get_target_property(QM_FILES ${BIN} QM_FILES)
@@ -422,12 +425,10 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${BIN}> ${DEPLOY_PREFIX_PATH}
         )
-        if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
-            )
-        endif()
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${BIN}> ${CMAKE_CURRENT_BINARY_DIR}
+        )
     endforeach()
 
     foreach(LIB IN LISTS LIBS)
@@ -461,16 +462,14 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${PLUGIN}> ${DEPLOY_PREFIX_PATH}/plugins/${PLUGIN_TYPE}
         )
-        if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
-            )
-            add_custom_command(TARGET ${TARGET} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
-            )
-        endif()
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+            ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+        )
+        add_custom_command(TARGET ${TARGET} VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${PLUGIN}> ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TYPE}
+        )
     endforeach()
 
     if(OPENSSL_FOUND)
