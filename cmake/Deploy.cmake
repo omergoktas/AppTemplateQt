@@ -85,6 +85,10 @@ function(deploy_android TARGET DEPLOY_SOURCE_DIR)
 endfunction()
 
 function(deploy_ios TARGET DEPLOY_SOURCE_DIR)
+    set_target_properties(${TARGET} PROPERTIES
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
+        ${CMAKE_PROJECT_HOMEPAGE_URL}.${CMAKE_PROJECT_NAME}
+    )
     configure_file(${DEPLOY_SOURCE_DIR}/Info.plist
         ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)
     set_target_properties(${TARGET} PROPERTIES

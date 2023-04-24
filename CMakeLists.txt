@@ -5,8 +5,6 @@ list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
 )
 
-include(Options)
-
 project(AppTemplateQt
     LANGUAGES CXX
     VERSION 1.0.0
@@ -14,6 +12,7 @@ project(AppTemplateQt
     DESCRIPTION "Project template for Qt-based cross-platform apps."
 )
 
+include(Options)
 include(Setup)
 include(Deploy)
 

@@ -53,7 +53,10 @@ find_package(QT NAMES Qt6 REQUIRED Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED Core)
 
 string(TOLOWER ${CMAKE_SYSTEM_NAME} APP_SYSTEM_NAME)
-string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} APP_SYSTEM_PROCESSOR)
+if(CMAKE_SYSTEM_PROCESSOR) # Failsafe against iOS Simulator
+    string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} APP_SYSTEM_PROCESSOR)
+endif()
+
 add_compile_definitions(APP_SYSTEM_NAME="${APP_SYSTEM_NAME}")
 add_compile_definitions(APP_NAME="${CMAKE_PROJECT_NAME}")
 add_compile_definitions(APP_VERSION="${CMAKE_PROJECT_VERSION}")
