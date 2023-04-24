@@ -152,6 +152,10 @@ function(deploy_darwin TARGET DEPLOY_SOURCE_DIR)
         get_target_property(IS_FRAMEWORK ${LIB} FRAMEWORK)
         if(IS_FRAMEWORK)
             add_custom_command(TARGET deploy_base VERBATIM
+                COMMAND rm -rf
+                ${DEPLOY_PREFIX_PATH}/Contents/Frameworks/$<TARGET_BUNDLE_DIR_NAME:${LIB}>
+            )
+            add_custom_command(TARGET deploy_base VERBATIM
                 COMMAND cp -a
                 $<TARGET_BUNDLE_DIR:${LIB}> ${DEPLOY_PREFIX_PATH}/Contents/Frameworks
             )
@@ -341,6 +345,10 @@ function(deploy_linux TARGET DEPLOY_SOURCE_DIR)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${LIB} ${DEPLOY_PREFIX_PATH}/usr/lib
             )
+            add_custom_command(TARGET deploy_base VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${LIB} ${CMAKE_CURRENT_BINARY_DIR}
+            )
         endforeach()
     endif()
 
@@ -484,6 +492,10 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${DLL} ${DEPLOY_PREFIX_PATH}
             )
+            add_custom_command(TARGET deploy_base VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${DLL} ${CMAKE_CURRENT_BINARY_DIR}
+            )
         endforeach()
     endif()
 
@@ -524,16 +536,16 @@ function(deploy_windows TARGET DEPLOY_SOURCE_DIR)
 endfunction()
 
 function(deploy TARGET DEPLOY_BASE_DIR)
-    if(APP_DEPLOY_AS_PART_OF_ALL)
-        set(ALL ALL)
+    if(ANDROID)
+        add_custom_target(deploy_base ALL DEPENDS apk_all)
+    else()
+        add_custom_target(deploy_base ALL DEPENDS ${TARGET})
     endif()
 
-    get_sub_targets(TARGETS ${CMAKE_CURRENT_SOURCE_DIR})
-    add_custom_target(deploy_base ALL DEPENDS ${TARGET})
-    if(ANDROID)
-        add_custom_target(deploy ${ALL} DEPENDS apk_all)
+    if(APP_DEPLOY_AS_PART_OF_ALL)
+        add_custom_target(deploy ALL DEPENDS deploy_base)
     else()
-        add_custom_target(deploy ${ALL} DEPENDS deploy_base)
+        add_custom_target(deploy DEPENDS deploy_base)
     endif()
 
     set(DEPLOY_SOURCE_DIR ${DEPLOY_BASE_DIR}/${APP_SYSTEM_NAME})
