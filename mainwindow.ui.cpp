@@ -31,8 +31,8 @@ void Ui::MainWindow::setup()
 
 void Ui::MainWindow::retranslate()
 {
-    dreamEdit->setPlaceholderText(QCoreApplication::translate("MainWindow", "Enter your dream"));
-    submitButton->setText(QCoreApplication::translate("MainWindow", "Submit"));
+    dreamEdit->setPlaceholderText(QCoreApplication::translate("MainWindow", "Enter Turkish text you want translated to English"));
+    submitButton->setText(QCoreApplication::translate("MainWindow", "Translate"));
 }
 
 void Ui::MainWindow::revisualize()

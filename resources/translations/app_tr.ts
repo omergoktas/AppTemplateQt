@@ -5,13 +5,13 @@
     <name>MainWindow</name>
     <message>
         <location filename="../../mainwindow.ui.cpp" line="34"/>
-        <source>Enter your dream</source>
-        <translation>Rüyanızı giriniz</translation>
+        <source>Enter Turkish text you want translated to English</source>
+        <translation>İngilizce&apos;ye çevrilmesini istediğiniz Türkçe metni girin</translation>
     </message>
     <message>
         <location filename="../../mainwindow.ui.cpp" line="35"/>
-        <source>Submit</source>
-        <translation>Gönder</translation>
+        <source>Translate</source>
+        <translation>Çevir</translation>
     </message>
 </context>
 </TS>
