@@ -18,6 +18,7 @@
 #include <QStyleHints>
 #include <QStyleFactory>
 #include <QPixmapCache>
+#include <QStandardPaths>
 
 // TODOs:
 // Settings-driven (default system dependent - as 3rd option) Dark-light mode (appearance mode) palette + Runtime change support
@@ -26,44 +27,25 @@
 // Platform/Settings-driven small geometry (widget size & icon/pixmap/image size) tweaks + what should be adjustable whatnot + Runtime change support
 // Cospetic-pen painting artifacts + what should be cosmetic whatnot + scaling's affects on it
 // Regular-pen painting artifacts + what should be regular whatnot + scaling's affects on it
-// Should higher dpi devices have lighter fonts?
-// Tüm kodlar bi genel olarak baştan yeniden gözden geçirilecek
-// macosda uygulamaismi.app yanı sıra deploy dmg oluştursun
-// linuxde eksik olan macos da fazla olan varsayılan plugin ve libler karşılaştırılsın
-// interin geri kalan tüm fontları s1 s4 c1 c6 c11 ile ZORT lansın ve resource olarak eklensin
-// lisans MIT, APACHI ya da BSD yapılsın
-// readme oluşturulsun
-// (özellikle windows, linux, macos olmak üzere) tüm yüklenen gereksiz pluginler ve libler silinsin ya da build scripte bunu otomatikleştirme eklensin
 // deployların otomatik olarak imzalanması eklenecek
-// appimage için gereken appstream standardı vb. gereklilikler yerine getirilip appler appimagehub'a yüklemeye hazır hale getirilecek
-// readme de qt creator içinden rahatlıkla "play" tuşuna basar basmaz ekstra birşey yapmadan debugging yapma olayı öğretilecek
 // pluginlerin instancelarının opsiyonel olmasını sağla, yani önce nullptr kontrolu yap sonra instancı kullan, eğer plugin yoksa warning de göster
-// her şeyin dosyaların vs kolayca replace edilebilirliğinden + relocate edilebilirliğinden emin ol (x86_64 arch olayıda relocatable olacak şekilde düzeltilsin)
-// cmake static buildlerde *.a dosyaları deploy edilmediği için boş klasörleri deploy ediyor
-// tüm copyrighted metaryali ücretsiz/lisansımıza uygun olanla değiştir ve kaynakları da ekle
-// linuxde gtk karanlık mode detection eklensin
 // her yeri, özellikle cmake dosyalarını, yorum satırları ve copyrightlar la süsle
-// deploy klasörü ile resources klasörlerindeki tekrar eden dosyaları resource aleyhine olacak şekilde azaltalım, gerekirse ilgili dosyalar (.icns vs) install aşamasında kopyalansın
-// Linux dmg si için de ayrı volume icon yapalım, app in ikonunu kullanmasın --mümkünse/anlamlıysa
 // Bütün build scriptleri/static/shared plugin vs hepsi github actions ile çalışıp çalışmadığı denenecek
 // Tüm scriptlerin adam akıllı çalışıp çalışmadığını denetlemek için testler yazılacak (github actions üzerinde misal)
 // Genel manada test konusu düşünülecek ui test, cpp test, build test, install test, qt sürüm değişimi test, dll/plugin varmı yokmu yüklendimi test,
-// mac deploy scripte yorum eklenebilir, ayrıca pencere boyutları imageconvert den getirilmeli, değişken olabilmeli
 // uygulama isminde boşlık olması hiç bir platformda build install vs leri engellememeli, misal dmg oluşumunu bi test et
-// ui her bir tuşun fonksiyonelliği test, örneğin submit tls plugini yüklümü ve nete bağlanabiliyor mu
 // tüm sistem property change observers/connections class destructorlarında disconnect edilmeli --gerekliyse
 // uygulama çapında loglama işini düşünelim
 // alt plugin ve kütüphanelerde translate olsun, her targetin translate dosyaları targetismi_tr.qs vs şeklinde olsun
 // insanları svg ye zorlama, dosyaların svg olmaması durumunda da tüm scriptler vs düzgün çalışsın
 // we should not hard link to openssl or any other plugin -except when build is static, instead we should copy them into the deploy dir
-// include font license
 // bug: windowsda apptemplateqt.exe kapatılsa da arkada çalışmayı sürdürüyor
-// deploy paket isimlerine sürüm ve cpu arch ekle
 // cmake kodlarında ${TARGET} kullanılan yerlerde uygunsa onun yerine ${CMAKE_PROJECT_NAME} kullan
 // QApplication::paletteChanged, QEvent::LocaleChange, QEvent::PaletteChange, QEvent::StyleChange, QEvent::ApplicationFontChange, QEvent::ApplicationPaletteChange, QEvent::FontChange, QEvent::OrientationChange
 
 Application::Application(int& argc, char** argv, int) : QApplication(argc, argv)
   , m_signalHandler(new SignalHandler(this))
+  , m_settings(new QSettings(settingsPath(), QSettings::IniFormat, this))
 {
     // Handle system signals
     connect(m_signalHandler, &SignalHandler::interrupted,
@@ -109,6 +91,16 @@ int Application::prepare()
     QApplication::setOrganizationDomain(APP_URL);
 
     return {};
+}
+
+QString Application::appDataPath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+}
+
+QString Application::settingsPath()
+{
+    return appDataPath() + "/Settings.ini"_L1;
 }
 
 void Application::updatePalette()

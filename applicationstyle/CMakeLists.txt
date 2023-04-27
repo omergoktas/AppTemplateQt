@@ -18,6 +18,8 @@ qt_add_resources(applicationstyle applicationstyleresources
     FILES ${IMAGES}
 )
 
+target_precompile_headers(applicationstyle REUSE_FROM pch)
+
 target_link_libraries(applicationstyle
     PRIVATE Qt::WidgetsPrivate # ApplicationStyle
 )

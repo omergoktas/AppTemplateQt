@@ -64,8 +64,6 @@ add_subdirectory(utils)
 add_subdirectory(applicationstyle)
 
 target_precompile_headers(AppTemplateQt REUSE_FROM pch)
-target_precompile_headers(utils REUSE_FROM pch)
-target_precompile_headers(applicationstyle REUSE_FROM pch)
 
 target_link_libraries(AppTemplateQt PRIVATE
     Qt::WidgetsPrivate # Application::setDprAdjustmentHook
