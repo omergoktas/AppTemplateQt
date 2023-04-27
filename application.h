@@ -19,7 +19,8 @@ private slots:
     void updatePalette();
 
 private:
-    static void setFont();
+    static void setFonts();
+    static void setTranslators();
     static void setDprAdjustmentHook();
 
 private:

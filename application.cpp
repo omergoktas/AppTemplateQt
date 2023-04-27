@@ -51,8 +51,6 @@
 // mac deploy scripte yorum eklenebilir, ayrıca pencere boyutları imageconvert den getirilmeli, değişken olabilmeli
 // uygulama isminde boşlık olması hiç bir platformda build install vs leri engellememeli, misal dmg oluşumunu bi test et
 // ui her bir tuşun fonksiyonelliği test, örneğin submit tls plugini yüklümü ve nete bağlanabiliyor mu
-// lgtm olayına bak https://code.qt.io/cgit/qt/qtbase.git/tree/.lgtm.yml?h=6.4.1
-// github actions işini hallet
 // tüm sistem property change observers/connections class destructorlarında disconnect edilmeli --gerekliyse
 // uygulama çapında loglama işini düşünelim
 // alt plugin ve kütüphanelerde translate olsun, her targetin translate dosyaları targetismi_tr.qs vs şeklinde olsun
@@ -64,68 +62,31 @@
 // cmake kodlarında ${TARGET} kullanılan yerlerde uygunsa onun yerine ${CMAKE_PROJECT_NAME} kullan
 // QApplication::paletteChanged, QEvent::LocaleChange, QEvent::PaletteChange, QEvent::StyleChange, QEvent::ApplicationFontChange, QEvent::ApplicationPaletteChange, QEvent::FontChange, QEvent::OrientationChange
 
-static constexpr qreal roundedDpr(qreal dpr)
-{
-    if (dpr < 1.125)
-        return 1.00;
-    else if (dpr < 1.375)
-        return 1.25;
-    else if (dpr < 1.625)
-        return 1.50;
-    else if (dpr < 1.875)
-        return 1.75;
-    else
-        return std::round(dpr * 2) / 2;
-}
-
 Application::Application(int& argc, char** argv, int) : QApplication(argc, argv)
   , m_signalHandler(new SignalHandler(this))
 {
     // Handle system signals
     connect(m_signalHandler, &SignalHandler::interrupted,
             m_signalHandler, &SignalHandler::exitGracefully);
-    // SignalHandler bi son kontrol, inherited:QObject olmasa mesela??
 
     /* Prepare setting instances */
     //    s_settings = new QSettings(settingsPath(), QSettings::IniFormat);
     //  FIXME  QSettings settings(settingsPath(), QSettings::IniFormat);
     //    if (settings.value(u"General/Interface.Theme"_s, InterfaceSettings().theme).toString() == u"Light"_s)
 
-    /** Core initialization **/
+    // App settings
     Application::setDprAdjustmentHook();
-    QApplication::setApplicationDisplayName(APP_NAME);
-    QApplication::setWindowIcon(QIcon(u":/images/icon.svg"_s));
-    QApplication::setStyle(QStyleFactory::create(u"ApplicationStyle"_s));
-    QApplication::setPalette(style()->standardPalette());
-    Application::setFont(); // Set after style, see: github.com/qt/qtbase/commit/14071b5
-
-    // qDebug() << "@@@@@@@@@@@@@" << QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+    Application::setApplicationDisplayName(APP_NAME);
+    Application::setWindowIcon(QIcon(u":/images/icon.svg"_s));
+    Application::setStyle(QStyleFactory::create(u"ApplicationStyle"_s));
+    Application::setPalette(style()->standardPalette());
+    Application::setFonts(); // Set after style, see: github.com/qt/qtbase/commit/14071b5
+    Application::setTranslators();
 
     //    QObject::connect(GeneralSettings::instance(), &GeneralSettings::interfaceSettingsChanged, [=]{
     //        QApplication::setPalette(palette());
     //        QPixmapCache::clear(); // Cached QIcon pixmaps makes use of old palette, so we have to update
     //    });
-
-    /* Set application ui settings */
-    auto qtTranslator = new QTranslator(this);
-    auto appTranslator = new QTranslator(this);
-
-    if (qtTranslator->load(QLocale::system(), u"qt"_s, u"_"_s,
-                           QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        installTranslator(qtTranslator);
-    } else if (qtTranslator->load(QLocale::system(), u"qtbase"_s, u"_"_s,
-                                  QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        installTranslator(qtTranslator);
-    }
-    if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s,
-                            QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        installTranslator(appTranslator);
-    } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s, u":/translations"_s)) {
-        installTranslator(appTranslator);
-    } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s,
-                                   QCoreApplication::applicationDirPath())) {
-        installTranslator(appTranslator);
-    }
 
     connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
             this, &Application::updatePalette);
@@ -136,15 +97,12 @@ int Application::prepare()
     // qputenv("QT_ENABLE_HIGHDPI_SCALING", "0"_ba);
     // qputenv("QT_SCALE_FACTOR", "2.0"_ba);
     // qputenv("QSG_RHI_BACKEND", "opengl"_ba);
-#if QT_CONFIG(xcb)
-    qputenv("QT_QPA_PLATFORM", "xcb"_ba);
-#endif
 
 #if !defined(Q_OS_ANDROID)
     qputenv("QT_FORCE_STDERR_LOGGING", "1"_ba);
 #endif
 
-    // Set these here, needed by QStandardPaths
+    // Set these here, QStandardPaths needs them
     QApplication::setApplicationName(APP_NAME);
     QApplication::setApplicationVersion(APP_VERSION);
     QApplication::setOrganizationName(APP_URL);
@@ -156,32 +114,71 @@ int Application::prepare()
 void Application::updatePalette()
 {
     QApplication::setPalette(style()->standardPalette());
-    QPixmapCache::clear(); // Cached QIcon pixmaps makes use of old palette
+    QPixmapCache::clear(); // Cached QIcon pixmaps make use of the old palette
 }
 
-void Application::setFont()
+void Application::setFonts()
 {
-    // Load fonts
-    const QStringList& fontFiles =  QDir(u":/fonts"_s).entryList(QDir::Files);
-    for (const QString& fontName : fontFiles)
+    // Install the fonts shipped with the app
+    const QStringList& fonts =  QDir(u":/fonts"_s).entryList(QDir::Files);
+    for (const QString& fontName : fonts)
         QFontDatabase::addApplicationFont(u":/fonts/"_s + fontName);
 
-    // Set default app font
+    // Set default font
     QFont font(u"Archivo"_s);
     font.setPixelSize(14);
     QApplication::setFont(font);
 
-    // Set tooltip font (just a bit smaller than the default font)
+    // Set tooltip font (one bit smaller)
     font.setPixelSize(font.pixelSize() - 1);
     QToolTip::setFont(font);
 }
 
+void Application::setTranslators()
+{
+    // Translate the Qt
+    auto qtTranslator = new QTranslator(instance());
+    if (qtTranslator->load(QLocale::system(), u"qt"_s, u"_"_s,
+                           QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+        installTranslator(qtTranslator);
+    } else if (qtTranslator->load(QLocale::system(), u"qtbase"_s, u"_"_s,
+                                  QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+        installTranslator(qtTranslator);
+    }
+
+    // Translate the app
+    auto appTranslator = new QTranslator(instance());
+    if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s,
+                            QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+        installTranslator(appTranslator);
+    } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s, u":/translations"_s)) {
+        installTranslator(appTranslator);
+    } else if (appTranslator->load(QLocale::system(), u"app"_s, u"_"_s,
+                                   QCoreApplication::applicationDirPath())) {
+        installTranslator(appTranslator);
+    }
+}
+
 void Application::setDprAdjustmentHook()
 {
+    static constexpr auto roundedDpr = [] (qreal dpr) {
+        if (dpr < 1.125)
+            return 1.00;
+        else if (dpr < 1.375)
+            return 1.25;
+        else if (dpr < 1.625)
+            return 1.50;
+        else if (dpr < 1.875)
+            return 1.75;
+        else
+            return std::round(dpr * 2) / 2;
+    };
+
     static auto adjustScreenDpr = [] (QScreen* screen) {
         const QPlatformScreen* platformScreen = screen->handle();
         qreal platformFactor = platformScreen->devicePixelRatio();
-        qreal logicalFactor = qreal(platformScreen->logicalDpi().first) / qreal(platformScreen->logicalBaseDpi().first);
+        qreal logicalFactor = qreal(platformScreen->logicalDpi().first)
+                / qreal(platformScreen->logicalBaseDpi().first);
         qreal roundedFactor = roundedDpr(platformFactor * logicalFactor);
         if (!qFuzzyCompare(screen->devicePixelRatio(), roundedFactor)) {
             QHighDpiScaling::setScreenFactor(screen, roundedFactor / platformFactor);
@@ -189,10 +186,13 @@ void Application::setDprAdjustmentHook()
             emit screen->physicalDotsPerInchChanged(screen->physicalDotsPerInch());
         }
     };
+
     for (QScreen* screen : QGuiApplication::screens())
         adjustScreenDpr(screen);
+
     QObject::connect(qApp, &QGuiApplication::screenAdded, adjustScreenDpr);
-    class WindowSystemEventHandler : public QWindowSystemEventHandler
+
+    class WindowSystemEventHandler final : public QWindowSystemEventHandler
     {
     public:
         bool sendEvent(QWindowSystemInterfacePrivate::WindowSystemEvent* e) override
@@ -204,5 +204,6 @@ void Application::setDprAdjustmentHook()
             return QWindowSystemEventHandler::sendEvent(e);
         }
     };
+
     QWindowSystemInterfacePrivate::installWindowSystemEventHandler(new WindowSystemEventHandler());
 }
