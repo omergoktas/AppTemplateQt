@@ -132,14 +132,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Restore Windows build cache
-      uses: actions/cache/restore@v3
-      with:
-        enableCrossOsArchive: true
-        fail-on-cache-miss: true
-        key: Windows-${{ github.run_id }}-${{ github.run_attempt }}-build-cache-for-publication
-        path: build/deploy
-
     - name: Restore macOS build cache
       uses: actions/cache/restore@v3
       with:
