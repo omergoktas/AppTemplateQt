@@ -127,6 +127,7 @@ jobs:
         path: build/deploy
 
   publish:
+    permissions: write-all
     needs: build
     name: Publish
     runs-on: ubuntu-latest
