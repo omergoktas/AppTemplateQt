@@ -14,8 +14,6 @@ jobs:
         include:
           - os: ubuntu-20.04
             conanops: "-s compiler.libcxx=libstdc++11"
-          - os: windows-2019
-            conanops: " "
           - os: macos-11
             conanops: " "
     name: ${{ matrix.os }}
